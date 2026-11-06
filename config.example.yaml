@@ -1,0 +1,57 @@
+# People Search Remover - Configuration Template
+# Copy this file to `config.yaml` and customize with your details:
+#   cp config.example.yaml config.yaml
+
+# Verification credentials used to complete provider suppression requests
+verification:
+  # Phone number to receive the automated verification call from Whitepages
+  # Note: Real mobile or landline numbers work best; VoIP numbers may be rejected.
+  phone: "555-123-4567"
+
+  # Email address to receive opt-out confirmation links
+  # Used by: Spokeo, BeenVerified, TruthFinder, and Intelius
+  email: "your-privacy-email@example.com"
+
+# Browser settings for Playwright automation
+browser:
+  # Keep false so a visible browser opens (crucial to avoid Cloudflare bot blocking
+  # and allow you to view the page or solve manual checks if necessary)
+  headless: false
+  # Milliseconds delay between browser actions for natural pacing
+  slow_mo_ms: 100
+
+# Enabled providers to run (whitelist).
+# Supported:
+#   - whitepages
+#   - spokeo
+#   - truthfinder
+#   - intelius
+#   - beenverified
+# If omitted or empty, all supported providers will be run.
+enabled_providers:
+  - whitepages
+  - spokeo
+  - truthfinder
+  - intelius
+  - beenverified
+
+# Standard opt-out reason submitted to forms that request it
+opt_out_reason: "I just want to keep my information private"
+
+# List of family members and locations to search and remove
+people:
+  - name: "Jane Doe"
+    # Optional: Date of birth (YYYY-MM-DD or MM/DD/YYYY) helps PeopleConnect / TruthFinder / Intelius
+    dob: "1980-05-15"
+    locations:
+      - city: "Austin"
+        state: "TX"
+      - city: "Seattle"
+        state: "WA"
+    aliases:
+      - "Jane M Doe"
+
+  - name: "John Doe"
+    locations:
+      - city: "Austin"
+        state: "TX"
