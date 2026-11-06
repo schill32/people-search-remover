@@ -22,6 +22,14 @@ export function buildSpokeoSearchUrl(name: string, location?: Location): string 
   return `https://www.spokeo.com/${nameSlug}`;
 }
 
+/**
+ * Builds a Spokeo reverse email search URL.
+ * Example: https://www.spokeo.com/email-search/search?e=jane.doe%40example.com
+ */
+export function buildSpokeoEmailSearchUrl(email: string): string {
+  return `https://www.spokeo.com/email-search/search?e=${encodeURIComponent(email.trim())}`;
+}
+
 export function cleanSpokeoProfileUrl(rawUrl: string): string {
   try {
     const url = new URL(rawUrl.trim(), 'https://www.spokeo.com');
@@ -60,8 +68,13 @@ export async function scrapeSpokeoCards(
 
     for (const link of links) {
       const href = link.getAttribute('href') || '';
-      // Ensure it's a person profile link (ends with /pXXXXX)
-      if (!/\/p\d+/.test(href) && !/\/p[a-zA-Z0-9]+/.test(href)) continue;
+      // Ensure it's a person profile link ending with /p[digits] and not navigation (/people/, /privacy)
+      if (
+        !/\/p\d+($|\?)/.test(href) &&
+        !/\/[^/]+\/[^/]+\/[^/]+\/p[a-zA-Z0-9]+($|\?)/.test(href)
+      ) {
+        continue;
+      }
 
       const cleanHref = href.split('?')[0];
       if (seenUrls.has(cleanHref)) continue;
@@ -84,6 +97,20 @@ export async function scrapeSpokeoCards(
         for (const m of locMatch) {
           const c = m.replace(/(?:Lives in|Located in|Current|Resides in)\s*:?\s*/i, '').trim();
           if (c && !locations.includes(c)) locations.push(c);
+        }
+      }
+
+      // If card text didn't extract location, attempt to parse from URL path (e.g. /Name/State/City/p...)
+      if (locations.length === 0) {
+        const urlParts = cleanHref.split('/').filter(Boolean);
+        // Spokeo URLs: [ 'FirstName-LastName', 'State', 'City', 'p12345' ]
+        if (urlParts.length >= 4) {
+          const statePart = urlParts[urlParts.length - 3];
+          const cityPart = urlParts[urlParts.length - 2];
+          if (statePart && cityPart && !statePart.startsWith('p') && !cityPart.startsWith('p')) {
+            const parsed = `${cityPart.replace(/-/g, ' ')}, ${statePart.replace(/-/g, ' ')}`;
+            locations.push(parsed);
+          }
         }
       }
 

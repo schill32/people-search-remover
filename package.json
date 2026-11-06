@@ -8,6 +8,14 @@
   },
   "scripts": {
     "start": "tsx src/index.ts",
+    "debug": "tsx --inspect src/index.ts",
+    "debug:wait": "tsx --inspect-wait src/index.ts",
+    "search": "tsx src/index.ts search",
+    "dry-run": "tsx src/index.ts run --dry-run",
+    "status": "tsx src/index.ts status",
+    "providers": "tsx src/index.ts providers",
+    "suppress": "tsx src/index.ts suppress",
+    "install:browsers": "playwright install chromium",
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest"

@@ -1,4 +1,6 @@
-# People Search Remover (`people-search-remover`)
+# People Search Remover
+
+After a family member was being harassed by someone using people finder websites, I started to create this tool to automate the suppression/opt-out process.  A tool even with the best intentions can still can manipulated for evil.
 
 A modular, interactive TypeScript command-line utility powered by Playwright to search for family members across the top 5 public people search engines / data brokers, review matching profiles, and automate suppression/opt-out requests.
 
@@ -8,6 +10,7 @@ A modular, interactive TypeScript command-line utility powered by Playwright to 
 | :--- | :--- | :--- | :--- |
 | **Whitepages** | Whitepages Inc. | **Phone Call (4-digit PIN)** | Form at `whitepages.com/suppression-requests` |
 | **Spokeo** | Spokeo Inc. | **Email Confirmation Link** | Form at `spokeo.com/optout` |
+| **TruePeopleSearch** | TruePeopleSearch | **Email Confirmation Link** | Portal at `truepeoplesearch.com/removal` |
 | **TruthFinder** | PeopleConnect | **Email Confirmation Link** | Central portal at `suppression.peopleconnect.us` |
 | **Intelius** | PeopleConnect | **Email Confirmation Link** | Central portal at `suppression.peopleconnect.us` |
 | **BeenVerified** | Lifetime Value Co. | **Email Confirmation Link** | Opt-out portal at `beenverified.com/svc/optout` |
@@ -28,7 +31,7 @@ A modular, interactive TypeScript command-line utility powered by Playwright to 
 1. **Install dependencies and Playwright Chromium:**
    ```bash
    npm install
-   npx playwright install chromium
+   npm run install:browsers
    ```
 
 2. **Create your configuration file:**
@@ -41,7 +44,7 @@ A modular, interactive TypeScript command-line utility powered by Playwright to 
    verification:
      # Real phone number to receive the automated Whitepages verification call
      phone: "555-123-4567"
-     # Email to receive opt-out confirmation links (Spokeo, BeenVerified, TruthFinder, Intelius)
+     # Email to receive opt-out confirmation links (Spokeo, BeenVerified, TruePeopleSearch, TruthFinder, Intelius)
      email: "your-privacy-email@example.com"
 
    browser:
@@ -51,6 +54,7 @@ A modular, interactive TypeScript command-line utility powered by Playwright to 
    enabled_providers:
      - whitepages
      - spokeo
+     - truepeoplesearch
      - truthfinder
      - intelius
      - beenverified
@@ -67,6 +71,11 @@ A modular, interactive TypeScript command-line utility powered by Playwright to 
            state: "WA"
        aliases:
          - "Jane M Doe"
+       # Optional: Known email addresses used for reverse email lookup (e.g. Spokeo)
+       emails:
+         - "jane.doe@example.com"
+       # Optional: Per-person verification email override for confirmation links
+       verification_email: "jane-optout@privacy-alias.com"
      - name: "John Doe"
        locations:
          - city: "Austin"
@@ -81,41 +90,39 @@ A modular, interactive TypeScript command-line utility powered by Playwright to 
 Runs the full interactive pipeline: searches configured family members across all enabled providers, presents a candidate checklist to select matching profiles, and executes suppression requests one by one:
 ```bash
 npm start
-# or
-npx tsx src/index.ts run
 ```
 
 ### 2. Dry Run (Search & Review Only)
 Scans all providers and displays discovered profiles in a terminal table without submitting any opt-out forms:
 ```bash
-npx tsx src/index.ts run --dry-run
+npm run dry-run
 # or
-npx tsx src/index.ts search
+npm run search
 ```
 
 ### 3. Run for a Specific Provider Only
 Target a single provider by ID:
 ```bash
-npx tsx src/index.ts run --provider whitepages
-npx tsx src/index.ts run --provider spokeo
+npm start -- --provider whitepages
+npm start -- --provider spokeo
 ```
 
 ### 4. Direct URL Suppression
 Submit a specific known profile URL directly without scanning:
 ```bash
-npx tsx src/index.ts suppress whitepages "https://www.whitepages.com/name/Jane-Doe/Austin-TX/PX3vBjnODk3"
-npx tsx src/index.ts suppress spokeo "https://www.spokeo.com/Jane-Doe/TX/Austin/p12345"
+npm run suppress -- whitepages "https://www.whitepages.com/name/Jane-Doe/Austin-TX/PX3vBjnODk3"
+npm run suppress -- spokeo "https://www.spokeo.com/Jane-Doe/TX/Austin/p12345"
 ```
 
 ### 5. View Tracked Records & Audit Status
 Inspect all previously discovered, submitted, and verified records stored in `state.json`:
 ```bash
-npx tsx src/index.ts status
+npm run status
 ```
 
 ### 6. List Supported Providers
 ```bash
-npx tsx src/index.ts providers
+npm run providers
 ```
 
 ---
@@ -136,7 +143,7 @@ npx tsx src/index.ts providers
    ```
 4. You answer the call and key in the PIN. The tool detects call completion and records the submission in `state.json`.
 
-### Spokeo, BeenVerified, TruthFinder & Intelius (Email Verification)
+### Spokeo, BeenVerified, TruePeopleSearch, TruthFinder & Intelius (Email Verification)
 1. The tool navigates to the respective opt-out page, selects your record, and submits your `verification.email`.
 2. A terminal banner notifies you that a verification email was dispatched.
 3. Simply open your inbox and click the verification link in the email to activate the suppression rule.
@@ -148,6 +155,41 @@ npx tsx src/index.ts providers
 All search results, submission timestamps, and verification statuses are locally tracked in `state.json`.
 - Already submitted or verified records are automatically skipped during subsequent runs so you don't submit duplicate requests.
 - Because data brokers periodically re-ingest county records, re-running the tool every 3 to 6 months verifies whether new profiles have emerged.
+
+---
+
+## Debugging & Breakpoints
+
+If an automation step or form interaction (such as a CAPTCHA or custom checkbox) needs inspection or troubleshooting:
+
+### 1. Programmatic Breakpoint (`page.pause()`)
+Insert `await page.pause()` directly into any provider method (e.g. before form interaction in `src/providers/peopleconnect/client.ts`):
+```typescript
+await page.pause(); // Halts execution and opens Playwright Inspector GUI
+```
+Playwright halts execution, keeps the browser open, and launches the Inspector toolbar where you can view DOM selectors, test clicks, and hit **Resume (`F8`)** or **Step Over (`F10`)**.
+
+### 2. Playwright Inspector Mode (`PWDEBUG=1`)
+Step through any provider run using the Inspector GUI without changing code:
+```bash
+PWDEBUG=1 npm start -- --provider truthfinder
+```
+
+### 3. IDE Debugger (IntelliJ / WebStorm / VS Code)
+Attach your IDE debugger directly to TypeScript source code using standard breakpoints:
+```bash
+# Start with Node inspector listening on port 9229
+npm run debug -- --provider truthfinder
+
+# Or halt on line 1 until your IDE debugger attaches
+npm run debug:wait -- --provider truthfinder
+```
+
+#### Attaching from IntelliJ / WebStorm:
+1. Go to **Run > Edit Configurations...**
+2. Click **`+`** and choose **Attach to Node.js/Chrome**.
+3. Keep default port `9229` and click **OK**.
+4. Set breakpoints in your TypeScript files and click **Debug** on the configuration.
 
 ---
 

@@ -9,7 +9,7 @@ verification:
   phone: "555-123-4567"
 
   # Email address to receive opt-out confirmation links
-  # Used by: Spokeo, BeenVerified, TruthFinder, and Intelius
+  # Used by: Spokeo, BeenVerified, TruthFinder, Intelius, and TruePeopleSearch
   email: "your-privacy-email@example.com"
 
 # Browser settings for Playwright automation
@@ -24,6 +24,7 @@ browser:
 # Supported:
 #   - whitepages
 #   - spokeo
+#   - truepeoplesearch
 #   - truthfinder
 #   - intelius
 #   - beenverified
@@ -31,6 +32,7 @@ browser:
 enabled_providers:
   - whitepages
   - spokeo
+  - truepeoplesearch
   - truthfinder
   - intelius
   - beenverified
@@ -50,6 +52,13 @@ people:
         state: "WA"
     aliases:
       - "Jane M Doe"
+    # Optional: Known email addresses used for reverse email lookup & profile disambiguation
+    emails:
+      - "jane.doe@example.com"
+      - "jane.work@company.com"
+    # Optional: Override verification email specifically for this family member's opt-out confirmation links
+    # (falls back to global verification.email if omitted)
+    verification_email: "jane-optout@privacy-alias.com"
 
   - name: "John Doe"
     locations:

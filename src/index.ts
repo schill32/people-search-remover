@@ -17,12 +17,15 @@ import { SpokeoProvider } from './providers/spokeo/index.js';
 import { BeenVerifiedProvider } from './providers/beenverified/index.js';
 import { TruthFinderProvider } from './providers/peopleconnect/truthfinder.js';
 import { InteliusProvider } from './providers/peopleconnect/intelius.js';
+import { TruePeopleSearchProvider } from './providers/truepeoplesearch/index.js';
+import { isLocationMatch } from './location.js';
 import type { AppConfig, ProviderContext, SearchCandidate } from './types.js';
 
 function buildRegistry(): ProviderRegistry {
   const registry = new ProviderRegistry();
   registry.register(new WhitepagesProvider());
   registry.register(new SpokeoProvider());
+  registry.register(new TruePeopleSearchProvider());
   registry.register(new TruthFinderProvider());
   registry.register(new InteliusProvider());
   registry.register(new BeenVerifiedProvider());
@@ -34,7 +37,7 @@ const ui = new TerminalUI();
 
 program
   .name('people-search-remover')
-  .description('Interactive CLI utility to search and remove personal records from Whitepages, Spokeo, TruthFinder, Intelius, and BeenVerified')
+  .description('Interactive CLI utility to search and remove personal records from Whitepages, Spokeo, TruePeopleSearch, TruthFinder, Intelius, and BeenVerified')
   .version('1.0.0');
 
 // Command: run (Default full interactive pipeline)
@@ -99,6 +102,19 @@ program
             try {
               const matches = await provider.search(person, loc, ctx);
               for (const match of matches) {
+                // Ensure candidate has verification email mapped from person or global config
+                match.verificationEmail = person.verification_email || config.verification.email;
+
+                // Ensure the result has a location that matches the query (or matched via exact email)
+                if (!match.matchedEmail && !isLocationMatch(match.locations, loc.city, loc.state)) {
+                  ui.log(
+                    chalk.gray(
+                      `  [Filtering out non-matching location: ${match.name} - ${match.locations.join(', ') || 'No location'}]`
+                    )
+                  );
+                  continue;
+                }
+
                 // Check if already processed
                 if (state.isAlreadyProcessed(provider.id, match.id)) {
                   ui.log(chalk.gray(`  [Skipping already processed: ${match.name} - ${match.profileUrl}]`));
@@ -185,7 +201,7 @@ program
       }
 
       ui.log(chalk.bold.green('\n✔ Suppression requests completed!'));
-      ui.info('Check `state.json` or run `npx tsx src/index.ts status` to view tracked records.');
+      ui.info('Check `state.json` or run `npm run status` to view tracked records.');
     } finally {
       await session.close();
     }

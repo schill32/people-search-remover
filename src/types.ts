@@ -15,6 +15,8 @@ export const PersonSchema = z.object({
   dob: z.string().optional(),
   locations: z.array(LocationSchema).min(1, 'At least one location is required'),
   aliases: z.array(z.string()).default([]),
+  emails: z.array(z.string().email('Invalid email address')).default([]),
+  verification_email: z.string().email('Invalid verification email address').optional(),
 });
 
 export type Person = z.infer<typeof PersonSchema>;
@@ -39,6 +41,7 @@ export const AppConfigSchema = z.object({
   enabled_providers: z.array(z.string()).default([
     'whitepages',
     'spokeo',
+    'truepeoplesearch',
     'truthfinder',
     'intelius',
     'beenverified',
@@ -61,6 +64,8 @@ export interface SearchCandidate {
   locations: string[];
   relatives?: string[];
   profileUrl: string;
+  verificationEmail?: string; // Target email for receiving confirmation links
+  matchedEmail?: string; // Email address that matched this record during reverse lookup
   metadata?: Record<string, unknown>;
 }
 

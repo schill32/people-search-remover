@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   buildSpokeoSearchUrl,
+  buildSpokeoEmailSearchUrl,
   cleanSpokeoProfileUrl,
   slugifySpokeo,
 } from '../src/providers/spokeo/search.js';
@@ -17,6 +18,11 @@ describe('Spokeo Provider Utilities', () => {
       state: 'TX',
     });
     expect(url).toBe('https://www.spokeo.com/Jane-Doe/TX/Austin');
+  });
+
+  it('builds reverse email search URLs with encoded email', () => {
+    const url = buildSpokeoEmailSearchUrl('jane.doe@example.com');
+    expect(url).toBe('https://www.spokeo.com/email-search/search?e=jane.doe%40example.com');
   });
 
   it('builds search URL with name only when location is omitted', () => {

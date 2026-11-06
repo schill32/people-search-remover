@@ -31,10 +31,24 @@ export class PeopleConnectClient {
     await emailInput.waitFor({ state: 'visible', timeout: 15000 });
     await emailInput.fill(email);
 
+    // --- DEBUG BREAKPOINT ---
+    // Pauses execution and opens the Playwright Inspector GUI to inspect the checkbox & DOM
+    await page.pause();
+
     // Terms checkbox if present
     const checkbox = page.locator("input[type='checkbox']").first();
     if ((await checkbox.count()) > 0 && !(await checkbox.isChecked())) {
-      await checkbox.check();
+      try {
+        await checkbox.check();
+      } catch {
+        // Fallback for custom styled checkboxes where input is covered by label/span
+        await checkbox.check({ force: true }).catch(async () => {
+          const label = page.locator("label:has(input[type='checkbox']), label[for*='terms' i]").first();
+          if ((await label.count()) > 0) {
+            await label.click();
+          }
+        });
+      }
     }
 
     // Submit button
@@ -116,13 +130,14 @@ export class PeopleConnectClient {
     candidate: SearchCandidate,
     ctx: ProviderContext
   ): Promise<SuppressionResult> {
-    const email = ctx.config.verification.email;
+    const email = candidate.verificationEmail || ctx.config.verification.email;
     if (!email) {
       return {
         providerId: candidate.providerId,
         recordId: candidate.id,
         status: 'failed',
-        message: 'PeopleConnect suppression requires a verification email in config.yaml under verification.email',
+        message:
+          'PeopleConnect suppression requires a verification email in config.yaml under verification.email or person.verification_email',
       };
     }
 

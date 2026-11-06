@@ -6,14 +6,15 @@ export async function submitBeenVerifiedSuppression(
   ctx: ProviderContext
 ): Promise<SuppressionResult> {
   const page: Page = ctx.page;
-  const email = ctx.config.verification.email;
+  const email = candidate.verificationEmail || ctx.config.verification.email;
 
   if (!email) {
     return {
       providerId: 'beenverified',
       recordId: candidate.id,
       status: 'failed',
-      message: 'BeenVerified requires a verification email in config.yaml under verification.email',
+      message:
+        'BeenVerified requires a verification email in config.yaml under verification.email or person.verification_email',
     };
   }
 

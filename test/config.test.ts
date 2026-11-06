@@ -88,4 +88,37 @@ people:
 `;
     expect(() => parseConfigYaml(invalidEmail)).toThrowError(ConfigError);
   });
+
+  it('parses optional per-person emails and verification_email', () => {
+    const yaml = `
+people:
+  - name: "Jane Doe"
+    locations:
+      - city: "Austin"
+        state: "TX"
+    emails:
+      - "jane.doe@example.com"
+      - "jane.work@example.com"
+    verification_email: "jane-privacy@example.com"
+`;
+    const config = parseConfigYaml(yaml);
+    expect(config.people[0].emails).toEqual([
+      'jane.doe@example.com',
+      'jane.work@example.com',
+    ]);
+    expect(config.people[0].verification_email).toBe('jane-privacy@example.com');
+  });
+
+  it('rejects invalid per-person emails', () => {
+    const yaml = `
+people:
+  - name: "Jane Doe"
+    locations:
+      - city: "Austin"
+        state: "TX"
+    emails:
+      - "not-a-valid-email"
+`;
+    expect(() => parseConfigYaml(yaml)).toThrowError(ConfigError);
+  });
 });

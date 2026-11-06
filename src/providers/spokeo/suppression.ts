@@ -1,21 +1,25 @@
 import type { Page } from 'playwright';
-import type { ProviderContext, SuppressionResult } from '../../types.js';
+import type { ProviderContext, SearchCandidate, SuppressionResult } from '../../types.js';
 import { cleanSpokeoProfileUrl } from './search.js';
 
 export async function submitSpokeoSuppression(
-  profileUrl: string,
+  candidateOrUrl: SearchCandidate | string,
   ctx: ProviderContext
 ): Promise<SuppressionResult> {
   const page: Page = ctx.page;
+  const profileUrl = typeof candidateOrUrl === 'string' ? candidateOrUrl : candidateOrUrl.profileUrl;
   const cleanUrl = cleanSpokeoProfileUrl(profileUrl);
-  const email = ctx.config.verification.email;
+  const email =
+    (typeof candidateOrUrl === 'object' ? candidateOrUrl.verificationEmail : undefined) ||
+    ctx.config.verification.email;
 
   if (!email) {
     return {
       providerId: 'spokeo',
       recordId: cleanUrl,
       status: 'failed',
-      message: 'Spokeo requires a verification email in config.yaml under verification.email',
+      message:
+        'Spokeo requires a verification email in config.yaml under verification.email or person.verification_email',
     };
   }
 
