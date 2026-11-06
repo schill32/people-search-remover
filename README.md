@@ -1,6 +1,6 @@
 # People Search Remover
 
-After a family member was being harassed by someone using people finder websites, I started to create this tool to automate the suppression/opt-out process.  A tool even with the best intentions can still can manipulated for evil.
+After a family member was being harassed by someone using people finder websites, I started to create this tool to automate the suppression/opt-out process.  A tool even with the best intentions can still can manipulated for bad.
 
 A modular, interactive TypeScript command-line utility powered by Playwright to search for family members across the top 5 public people search engines / data brokers, review matching profiles, and automate suppression/opt-out requests.
 
